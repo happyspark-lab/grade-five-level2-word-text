@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>动物城大搜捕：字词纠错特训</title>
+    <style>
+        :root {
+            /* 疯狂动物城风格配色：警服蓝、夜景紫、霓虹光 */
+            --primary: #00e5ff;    /* 霓虹蓝 */
+            --secondary: #ffcc00;  /* 警徽金 */
+            --accent: #ff6600;     /* 狐狸橙 */
+            --bg-dark: #1a0b2e;    /* 深紫夜景 */
+            --correct: #00e676; 
+            --wrong: #ff4081;
+            --text-main: #ffffff;
+        }
+        body {
+            margin: 0; padding: 0; 
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(135deg, #1a0b2e 0%, #431257 50%, #0d2546 100%);
+            color: var(--text-main); 
+            min-height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+            /* 防止手机点击出现蓝色高亮块 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .game-card {
+            background: rgba(45, 27, 78, 0.95); 
+            border: 3px solid var(--primary); 
+            border-radius: 25px;
+            padding: 25px; 
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.3); 
+            width: 92%; max-width: 650px; text-align: center;
+            box-sizing: border-box;
+            position: relative;
+        }
+        /* 顶部装饰条 */
+        .game-card::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            border-radius: 25px 25px 0 0;
+        }
+
+        .header { display: flex; justify-content: space-between; font-size: 1.1rem; color: var(--primary); margin-bottom: 15px; font-weight: bold; }
+        
+        .progress-track { width: 100%; height: 14px; background: #150826; border-radius: 10px; margin-bottom: 20px; overflow: hidden; border: 1px solid #5a3d8a; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 0.3s; }
+        
+        .q-badge { 
+            background: linear-gradient(45deg, var(--accent), #ff4081); 
+            display: inline-block; padding: 5px 15px; border-radius: 15px; 
+            font-size: 1rem; margin-bottom: 10px; color: white; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(255, 102, 0, 0.3);
+        }
+        
+        .q-phrase-container { margin: 20px 0; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;}
+        .q-instruction { font-size: 1.3rem; color: #ccc; margin-bottom: 10px; }
+        
+        /* 题目大字 */
+        .q-phrase { 
+            font-size: 3.2rem; 
+            color: #fff; 
+            text-shadow: 0 0 15px var(--primary); 
+            letter-spacing: 2px; 
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .highlight-y { 
+            color: var(--secondary); 
+            border-bottom: 3px solid var(--secondary); 
+            padding-bottom: 2px;
+        }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;}
+        .option-btn {
+            background: rgba(255,255,255,0.08); 
+            border: 2px solid #5a3d8a; 
+            color: white;
+            padding: 18px; font-size: 1.8rem; border-radius: 15px; cursor: pointer; transition: 0.2s;
+            font-weight: bold;
+        }
+        .option-btn:active { transform: scale(0.98); }
+        .option-btn.correct { background: var(--correct) !important; color: #003300; border-color: var(--correct); }
+        .option-btn.wrong { background: var(--wrong) !important; border-color: var(--wrong); opacity: 0.8; }
+        
+        .feedback-box { display: none; margin-top: 20px; padding: 15px; border: 2px dashed var(--primary); background: rgba(0,0,0,0.3); text-align: left; border-radius: 12px; }
+        .fb-title { font-size: 1.5rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        .fb-text { font-size: 1.3rem; line-height: 1.5; color: #ddd; }
+        
+        .action-btn { 
+            background: linear-gradient(45deg, var(--primary), #2979ff); 
+            color: #002f3c; border: none; padding: 16px 0; width: 100%; font-size: 1.6rem; border-radius: 50px; 
+            cursor: pointer; font-weight: 800; margin-top: 25px; 
+            box-shadow: 0 5px 0 #004d40; 
+        }
+        .action-btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        .input-group { margin: 20px 0; display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
+        .custom-input, .custom-select {
+            background: rgba(0,0,0,0.3); border: 2px solid var(--primary); color: var(--primary);
+            padding: 12px; font-size: 1.2rem; border-radius: 12px; outline: none; text-align: center;
+            width: 100%; box-sizing: border-box;
+            appearance: none; -webkit-appearance: none;
+        }
+        .custom-select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2300e5ff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; }
+        .custom-select option { background: #1a0b2e; color: #fff; }
+
+        .wrong-list { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-top: 15px; max-height: 180px; overflow-y: auto; font-size: 1.1rem; border: 1px solid #5a3d8a; }
+        .wrong-item { color: var(--wrong); margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+
+        /* 手机适配优化 */
+        @media screen and (max-width: 600px) {
+            .game-card { padding: 20px 15px; width: 95%; margin: 10px; }
+            h1 { font-size: 2.2rem !important; }
+            .q-phrase { font-size: 2.6rem; }
+            .options-grid { gap: 12px; }
+            .option-btn { padding: 15px; font-size: 1.5rem; }
+            .fb-title { font-size: 1.4rem; }
+            .fb-text { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container" class="game-card">
+        <div id="start-screen">
+            <h1 style="font-size: 3rem; color: var(--secondary); margin: 10px 0; text-shadow: 0 0 10px var(--accent);">🦁 动物城警官特训 🐰</h1>
+            <p style="font-size: 1.2rem; color: var(--primary); letter-spacing: 1px;">易错字词大搜捕 V4.0 (加强版)</p>
+            
+            <div style="margin: 20px 0; font-size: 1.1rem; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; border: 1px solid #5a3d8a; line-height: 1.6;">
+                <p>👮 <b>新晋警官请注意：</b></p>
+                <p>城里出现了一批“错别字”捣蛋鬼！系统已为你制定了 <b>20题/天</b> 的巡逻计划。</p>
+                <p>请务必火眼金睛，将它们一网打尽！</p>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="username" class="custom-input" placeholder="输入警官代号 (如: 朱迪)" maxlength="8">
+                <select id="level-select" class="custom-select">
+                    <option value="0">正在加载任务(如卡住请刷新)...</option>
+                </select>
+            </div>
+
+            <button class="action-btn" onclick="startGame()">开始巡逻</button>
+        </div>
+
+        <div id="game-screen" style="display: none;">
+            <div class="header">
+                <span id="score-display">🏅 警徽: 0</span>
+                <span id="count-display">任务: 1/20</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
+            
+            <div id="q-type" class="q-badge"></div>
+            <div class="q-phrase-container" id="q-main-display"></div>
+            <div class="options-grid" id="options-grid"></div>
+            
+            <div class="feedback-box" id="feedback-box">
+                <span id="fb-title" class="fb-title"></span>
+                <p id="fb-text" class="fb-text"></p>
+            </div>
+            
+            <button id="next-btn" class="action-btn" style="display:none" onclick="nextQuestion()">下一个案件 ➔</button>
+        </div>
+
+        <div id="result-screen" style="display: none;">
+            <h1 style="font-size: 2.8rem; color: var(--secondary);">巡逻结束！</h1>
+            <p style="font-size:1.3rem;">执勤警官：<span id="result-name" style="color:var(--primary); font-weight:bold;"></span></p>
+            <div id="final-score" style="font-size: 4rem; margin: 15px 0; color: var(--secondary); text-shadow: 0 0 20px var(--secondary);">0</div>
+            
+            <div id="wrong-record-box">
+                <p style="text-align:left; color:var(--wrong); font-size: 1.2rem; font-weight:bold;">📂 案件复盘（错题）：</p>
+                <div class="wrong-list" id="wrong-list"></div>
+            </div>
+            
+            <button class="action-btn" onclick="location.reload()">返回警局首页</button>
+        </div>
+    </div>
+
+<script>
+    // --- 1. 安全音效初始化 ---
+    let AudioCtx;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) AudioCtx = new AudioContext();
+    } catch(e) {
+        console.log("设备不支持音效，已静音模式运行");
+    }
+
+    function playSound(freq, type, duration) {
+        if (!AudioCtx) return; 
+        try {
+            if(AudioCtx.state === 'suspended') AudioCtx.resume();
+            const osc = AudioCtx.createOscillator();
+            const gain = AudioCtx.createGain();
+            osc.type = type; 
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, AudioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, AudioCtx.currentTime + duration);
+            osc.connect(gain); 
+            gain.connect(AudioCtx.destination);
+            osc.start(); 
+            osc.stop(AudioCtx.currentTime + duration);
+        } catch(e) {}
+    }
+
+    // --- 2. 完整题库 (含新增的100道特训题) ---
+    const DB = [
+        // === 原有题库 (Day 1 - Day 6) ===
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"嫉<span class='highlight-y'>妒</span>", opts:["dù", "hù"], ans:"dù", why:"嫉妒(dù)，不读hù。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>凯</span>旋", opts:["kǎi", "kǎ"], ans:"kǎi", why:"凯(kǎi)旋，不读kǎ。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>琐</span>碎", opts:["suǒ", "zuǒ"], ans:"suǒ", why:"琐(suǒ)碎是平舌音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>馈</span>赠", opts:["kuì", "guì"], ans:"kuì", why:"馈(kuì)赠，不是富贵(guì)。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>刊</span>物", opts:["kān", "kēn"], ans:"kān", why:"刊(kān)登，不读kēn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"客<span class='highlight-y'>栈</span>", opts:["zhàn", "zàn"], ans:"zhàn", why:"客栈(zhàn)是翘舌音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>凛</span>冽", opts:["lǐn", "lèi"], ans:"lǐn", why:"凛(lǐn)冽是三声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"腼<span class='highlight-y'>腆</span>", opts:["tiǎn", "diǎn"], ans:"tiǎn", why:"腆(tiǎn)不读diǎn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>磁</span>铁", opts:["cí", "zí"], ans:"cí", why:"磁(cí)性是平舌音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"鱼<span class='highlight-y'>鳞</span>", opts:["lín", "líng"], ans:"lín", why:"鱼鳞(lín)是前鼻音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"船<span class='highlight-y'>舵</span>", opts:["duò", "tuò"], ans:"duò", why:"掌舵(duò)，不读tuò。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>鉴</span>别", opts:["jiàn", "qiàn"], ans:"jiàn", why:"鉴(jiàn)定，不读qiàn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"书<span class='highlight-y'>籍</span>", opts:["jí", "jì"], ans:"jí", why:"书籍(jí)是二声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"湖<span class='highlight-y'>畔</span>", opts:["pàn", "bàn"], ans:"pàn", why:"湖畔(pàn)指半边，读pàn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"比<span class='highlight-y'>喻</span>", opts:["yù", "yú"], ans:"yù", why:"比喻(yù)是四声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>卓</span>越", opts:["zhuó", "zhuō"], ans:"zhuó", why:"卓(zhuó)越是二声。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"bǎo lěi", opts:["堡垒", "保垒"], ans:"堡垒", why:"堡垒用土筑，是土字底。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"xùn liáng", opts:["驯良", "训良"], ans:"驯良", why:"驯(xùn)良指马温顺，马字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"tái xiǎn", opts:["苔藓", "苔鲜"], ans:"苔藓", why:"苔藓是植物，草字头。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"jiǎo fèi", opts:["缴费", "交费"], ans:"缴费", why:"缴费要用手(丝字旁)。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"cháo xiào", opts:["嘲笑", "潮笑"], ans:"嘲笑", why:"嘲笑用嘴(口)，潮水用水。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"yī wēi", opts:["依偎", "衣偎"], ans:"依偎", why:"依偎是人挨着人，单人旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"jī kě", opts:["饥渴", "机渴"], ans:"饥渴", why:"饥饿要吃饭(饣)。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>子", opts:["辫", "辩"], ans:"辫", why:"辫子用绳系(纟)，辩论用言语。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"仇<span class='highlight-y'>敌</span>", opts:["chóu", "qiú"], ans:"chóu", why:"仇(chóu)敌，报仇。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>冠</span>军", opts:["guàn", "guān"], ans:"guàn", why:"第一名读guàn，帽子读guān。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"发<span class='highlight-y'>酵</span>", opts:["jiào", "xiào"], ans:"jiào", why:"酵(jiào)母，不读xiào。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"日<span class='highlight-y'>寇</span>", opts:["kòu", "guàn"], ans:"kòu", why:"寇(kòu)指强盗。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"水<span class='highlight-y'>浒</span>", opts:["hǔ", "xǔ"], ans:"hǔ", why:"水浒(hǔ)传，不读xǔ。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"烟<span class='highlight-y'>熏</span>", opts:["xūn", "xīn"], ans:"xūn", why:"熏(xūn)肉，熏黑。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>嫦</span>娥", opts:["cháng", "chǎng"], ans:"cháng", why:"嫦(cháng)娥奔月。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>伟", opts:["宏", "洪"], ans:"宏", why:"宏(hóng)伟指规模大，宝盖头。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>水", opts:["洪", "宏"], ans:"洪", why:"洪水要用三点水。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>运当头", opts:["鸿", "红"], ans:"鸿", why:"鸿(hóng)运指大运气，鸿雁传书。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>音", opts:["噪", "燥"], ans:"噪", why:"噪音用口吵，干燥用火烤。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"干<span class='highlight-y'>__</span>", opts:["燥", "躁"], ans:"燥", why:"干燥没水，要用火烤。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"急<span class='highlight-y'>__</span>", opts:["躁", "燥"], ans:"躁", why:"急躁得直跺脚（足字旁）。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>傲", opts:["骄", "娇"], ans:"骄", why:"骄傲像马一样昂头（马字旁）。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>区", opts:["郊", "效"], ans:"郊", why:"郊(jiāo)区指城外，交字旁。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"<span class='highlight-y'>__</span>气", opts:["娇", "骄"], ans:"娇", why:"娇(jiāo)气指柔弱，女字旁。" },
+        { t:"同音辨析", inst:"选出正确的字", phrase:"应接不<span class='highlight-y'>__</span>", opts:["暇", "瑕"], ans:"暇", why:"目不暇接指空闲(日字旁)，瑕疵指斑点。" },
+        { t:"词语档案", inst:"选词填空", phrase:"遇到事情好<span class='highlight-y'>__</span>", opts:["商量", "商讨"], ans:"商量", why:"'商量'比较口语化，适合朋友间。" },
+        { t:"词语档案", inst:"选词填空", phrase:"共同<span class='highlight-y'>__</span>实施方案", opts:["商议", "商量"], ans:"商议", why:"会议上正式讨论用'商议'。" },
+        { t:"词语档案", inst:"选词填空", phrase:"得知小狗丢了，感到万分<span class='highlight-y'>__</span>", opts:["悲痛", "悲伤"], ans:"悲痛", why:"'悲痛'程度更深，痛到骨子里。" },
+        { t:"词语档案", inst:"选词填空", phrase:"看到衣衫褴褛的老人，感到<span class='highlight-y'>__</span>", opts:["心酸", "悲愤"], ans:"心酸", why:"同情老人的遭遇，感到心酸。" },
+        { t:"词语档案", inst:"成语补全", phrase:"负<span class='highlight-y'>__</span>请罪", opts:["荆", "罪"], ans:"荆", why:"廉颇背着荆条去请罪。" },
+        { t:"词语档案", inst:"成语补全", phrase:"震耳欲<span class='highlight-y'>__</span>", opts:["聋", "龙"], ans:"聋", why:"声音大得快把耳朵震聋了。" },
+        { t:"词语档案", inst:"成语补全", phrase:"不<span class='highlight-y'>__</span>一顾", opts:["屑", "肖"], ans:"屑", why:"'屑'是碎末，指认为不值得看。" },
+        { t:"词语档案", inst:"成语补全", phrase:"<span class='highlight-y'>__</span>然无声", opts:["悄", "俏"], ans:"悄", why:"悄(qiǎo)然，静悄悄的。" },
+        { t:"词语档案", inst:"成语补全", phrase:"饮水思<span class='highlight-y'>__</span>", opts:["源", "原"], ans:"源", why:"喝水想着源头，比喻不忘本。" },
+        { t:"词语档案", inst:"成语补全", phrase:"<span class='highlight-y'>__</span>首<span class='highlight-y'>__</span>尾", opts:["畏", "喂"], ans:"畏", why:"畏首畏尾，形容胆小怕事。" },
+        { t:"词语档案", inst:"成语补全", phrase:"直言不<span class='highlight-y'>__</span>", opts:["讳", "伟"], ans:"讳", why:"讳(huì)指避忌，想说啥就说啥。" },
+        { t:"词语档案", inst:"成语补全", phrase:"<span class='highlight-y'>__</span>不关心", opts:["漠", "莫"], ans:"漠", why:"漠不关心，像沙漠一样冷淡。" },
+        { t:"词语档案", inst:"成语补全", phrase:"千<span class='highlight-y'>__</span>万确", opts:["真", "针"], ans:"真", why:"千真万确，非常真实。" },
+        { t:"词语档案", inst:"成语补全", phrase:"千<span class='highlight-y'>__</span>万苦", opts:["辛", "新"], ans:"辛", why:"千辛万苦，非常辛苦。" },
+        { t:"词语档案", inst:"成语补全", phrase:"千<span class='highlight-y'>__</span>万马", opts:["军", "均"], ans:"军", why:"千军万马，形容兵马多。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"白<span class='highlight-y'>鹭</span>", opts:["lù", "lòu"], ans:"lù", why:"鹭(lù)鸟，不读lòu。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>榴</span>弹", opts:["liú", "líu"], ans:"liú", why:"韵母iu的声调标在u上。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>眸</span>子", opts:["móu", "nóu"], ans:"móu", why:"眸(móu)子指眼睛。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>咂</span>嘴", opts:["zā", "zhā"], ans:"zā", why:"咂(zā)是平舌音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>筛</span>选", opts:["shāi", "shī"], ans:"shāi", why:"筛(shāi)子，不读shī。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"呜呼哀<span class='highlight-y'>哉</span>", opts:["zāi", "cāi"], ans:"zāi", why:"哉(zāi)是助词。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>谴</span>责", opts:["qiǎn", "piǎn"], ans:"qiǎn", why:"谴(qiǎn)责，不读piǎn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"机<span class='highlight-y'>械</span>", opts:["xiè", "jiè"], ans:"xiè", why:"机械(xiè)不读jiè。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"宽<span class='highlight-y'>敞</span>", opts:["chǎng", "chǎn"], ans:"chǎng", why:"敞(chǎng)是翘舌后鼻音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>怂</span>恿", opts:["sǒng", "sóng"], ans:"sǒng", why:"怂(sǒng)是三声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>蔓</span>延", opts:["màn", "wàn"], ans:"màn", why:"蔓(màn)延，不读wàn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"眼<span class='highlight-y'>睑</span>", opts:["jiǎn", "liǎn"], ans:"jiǎn", why:"睑(jiǎn)部，不读liǎn。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"波<span class='highlight-y'>澜</span>", opts:["lán", "luán"], ans:"lán", why:"波澜(lán)壮阔。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>剔</span>透", opts:["tī", "tì"], ans:"tī", why:"剔(tī)透是一声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"抖<span class='highlight-y'>擞</span>", opts:["sǒu", "shǔ"], ans:"sǒu", why:"抖擞(sǒu)是平舌音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>廉</span>价", opts:["lián", "nián"], ans:"lián", why:"廉(lián)洁，边音l。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"诚<span class='highlight-y'>恳</span>", opts:["kěn", "kěng"], ans:"kěn", why:"恳(kěn)是前鼻音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"稀<span class='highlight-y'>罕</span>", opts:["hǎn", "hàn"], ans:"hǎn", why:"稀罕(hǎn)是三声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"灰<span class='highlight-y'>烬</span>", opts:["jìn", "jìng"], ans:"jìn", why:"烬(jìn)是前鼻音。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>歹</span>徒", opts:["dǎi", "dái"], ans:"dǎi", why:"歹(dǎi)是三声。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"偏<span class='highlight-y'>僻</span>", opts:["pì", "bì"], ans:"pì", why:"偏僻(pì)不读bì。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>誊</span>写", opts:["téng", "yù"], ans:"téng", why:"誊(téng)写，不读yù。" },
+        { t:"正音档案", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>谨</span>慎", opts:["jǐn", "jǐng"], ans:"jǐn", why:"谨(jǐn)是前鼻音。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"倔<span class='highlight-y'>强</span>", opts:["jiàng", "qiáng"], ans:"jiàng", why:"脾气硬读jiàng，强大读qiáng。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"出<span class='highlight-y'>差</span>", opts:["chāi", "chā"], ans:"chāi", why:"工作派遣读chāi，差别读chā。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"劳<span class='highlight-y'>累</span>", opts:["lèi", "lěi"], ans:"lèi", why:"疲劳读lèi，积累读lěi。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"试<span class='highlight-y'>卷</span>", opts:["juàn", "juǎn"], ans:"juàn", why:"考卷读juàn，卷起来读juǎn。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"凶神恶<span class='highlight-y'>煞</span>", opts:["shà", "shā"], ans:"shà", why:"凶神恶煞读shà。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>龟</span>裂", opts:["jūn", "guī"], ans:"jūn", why:"裂开读jūn，乌龟读guī。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>挨</span>饿", opts:["ái", "āi"], ans:"ái", why:"遭受痛苦读ái，靠近读āi。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>挣</span>钱", opts:["zhèng", "zhēng"], ans:"zhèng", why:"赚取读zhèng，挣扎读zhēng。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>划</span>船", opts:["huá", "huà"], ans:"huá", why:"拨水读huá，计划读huà。" },
+        { t:"多音侦探", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>更</span>加", opts:["gèng", "gēng"], ans:"gèng", why:"程度深读gèng，改变读gēng。" },
+        { t:"智慧档案", inst:"选出高亮字的意思", phrase:"难以置<span class='highlight-y'>信</span>", opts:["相信", "书信"], ans:"相信", why:"难以置信指难以'相信'。" },
+        { t:"智慧档案", inst:"选出高亮字的意思", phrase:"<span class='highlight-y'>毕</span>业", opts:["完结", "全部"], ans:"完结", why:"毕业指学业'完结'。" },
+        { t:"智慧档案", inst:"选词填空", phrase:"形容“气得鼻子都歪了”", opts:["气急败坏", "暴跳如雷"], ans:"气急败坏", why:"原文对应气急败坏。" },
+        { t:"智慧档案", inst:"选词填空", phrase:"形容“一个巴掌拍不响”", opts:["孤掌难鸣", "独立自主"], ans:"孤掌难鸣", why:"孤掌难鸣比喻力量单薄。" },
+        { t:"智慧档案", inst:"选词填空", phrase:"形容“打开天窗说亮话”", opts:["直言不讳", "滔滔不绝"], ans:"直言不讳", why:"直言不讳指说话直爽无避忌。" },
+        { t:"智慧档案", inst:"选词填空", phrase:"形容“吃水不忘挖井人”", opts:["饮水思源", "追根究底"], ans:"饮水思源", why:"饮水思源比喻不忘本。" },
+        { t:"智慧档案", inst:"选词填空", phrase:"形容“前怕狼后怕虎”", opts:["畏首畏尾", "胆小如鼠"], ans:"畏首畏尾", why:"畏首畏尾形容顾虑重重。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"pān tán", opts:["攀谈", "攀谈"], ans:"攀谈", why:"'攀'字大手抓树枝，结构要记清。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"yā zhà", opts:["压榨", "压窄"], ans:"压榨", why:"'榨'油要用木头，木字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"è mèng", opts:["噩梦", "恶梦"], ans:"噩梦", why:"'噩'里面是两个口。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"gē bǎn", opts:["搁板", "格板"], ans:"搁板", why:"'搁'是提手旁。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"花<span class='highlight-y'>__</span>", opts:["瓣", "辫"], ans:"瓣", why:"花瓣中间是'瓜'，辫子中间是'系'。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"ǎi xiǎo", opts:["矮小", "射小"], ans:"矮小", why:"'矮'是矢字旁，'射'是身字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"yóu qī", opts:["油漆", "油膝"], ans:"油漆", why:"油漆有水，膝盖有肉(月)。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>绕", opts:["围", "挠"], ans:"围", why:"围绕是包围，挠头是手抓。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"马<span class='highlight-y'>__</span>", opts:["蹄", "啼"], ans:"蹄", why:"马蹄用脚(足)，啼叫用口。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>言", opts:["谎", "慌"], ans:"谎", why:"说谎用言字旁，心慌竖心旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"shān yá", opts:["山崖", "天涯"], ans:"山崖", why:"山崖有山，天涯有水。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"zào yīn", opts:["噪音", "燥音"], ans:"噪音", why:"噪音用口，干燥用火。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"tǐ cāo", opts:["体操", "体澡"], ans:"体操", why:"体操用手(提手旁)。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"fán zhí", opts:["繁殖", "繁值"], ans:"繁殖", why:"繁殖是歹字旁，值日是人字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"méi tàn", opts:["煤炭", "煤碳"], ans:"煤炭", why:"煤用火，炭有山(或火)。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"méi gui", opts:["玫瑰", "玫魂"], ans:"玫瑰", why:"玫瑰是玉(王)，灵魂是鬼。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>然", opts:["竟", "竞"], ans:"竟", why:"竟然是'竟'，竞争是'竟'。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>伴", opts:["陪", "部"], ans:"陪", why:"陪伴是左耳旁，部分是右耳旁。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"害<span class='highlight-y'>__</span>", opts:["怕", "泊"], ans:"怕", why:"害怕心里怕(竖心旁)，停泊有水。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>丽", opts:["俏", "悄"], ans:"俏", why:"俏丽指人(单人旁)，悄悄指心。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"<span class='highlight-y'>__</span>见", opts:["瞅", "揪"], ans:"瞅", why:"瞅见用眼(目)，揪心用手。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"辉<span class='highlight-y'>__</span>", opts:["煌", "皇"], ans:"煌", why:"金碧辉煌用火光。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"迟<span class='highlight-y'>__</span>", opts:["延", "廷"], ans:"延", why:"迟延是'延'。" },
+
+        // === 新增特训：错题本攻坚 (Day 7 - Day 11) ===
+        // 1. 同音字混淆
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 史", opts:["历", "厉"], ans:"历", why:"‘历’史表示经历、过去；严‘厉’表示严格、厉害。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"严 __", opts:["厉", "历"], ans:"厉", why:"严厉、厉害，都用‘厉’(厂字头+万)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 球", opts:["篮", "蓝"], ans:"篮", why:"最早的篮筐是用‘竹子’编的，所以是竹字头！" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"蔚 __", opts:["蓝", "篮"], ans:"蓝", why:"蓝天是颜色，用草字头（提取自蓝草）。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 须", opts:["必", "毕"], ans:"必", why:"必须(Must)是‘心’里要插一把刀(决心)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 须", opts:["必", "毕"], ans:"须", why:"必须用‘须’(胡须的须)；需要用‘需’(下雨天需躲避)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 要", opts:["需", "须"], ans:"需", why:"需要、需求，都要用‘需’(雨字头)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 夫", opts:["功", "工"], ans:"功", why:"练功夫要出力(力字旁)，工人只做工。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 谢", opts:["道", "到"], ans:"道", why:"道谢是‘说话’(说出谢谢)，所以用‘道’。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"曾 __", opts:["经", "今"], ans:"经", why:"曾经是经历过(绞丝旁)，今天是现在。" },
+        { t:"语境侦查", inst:"成语补全", phrase:"出神入 __", opts:["化", "画"], ans:"化", why:"意思是变化神奇，不是画画。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"借 __", opts:["钱", "前"], ans:"钱", why:"借钱用金子(金字旁)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"考 __", opts:["试", "式"], ans:"试", why:"考试是尝试、测试，用言字旁。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 子", opts:["狮", "师"], ans:"狮", why:"狮子是动物，必须有反犬旁(犭)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 备", opts:["责", "啧"], ans:"责", why:"责备是责任，用贝字底。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"分 __", opts:["析", "折"], ans:"析", why:"分析是用木头(木)和斧头(斤)拆解问题。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"鼓 __", opts:["励", "厉"], ans:"励", why:"鼓励要出力(力字旁)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 径", opts:["捷", "睫"], ans:"捷", why:"捷径指走得快(手)，睫毛用眼(目)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 气", opts:["脾", "牌"], ans:"脾", why:"脾气是身体器官，用月字旁(肉)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 裂", opts:["爆", "暴"], ans:"爆", why:"爆裂要用火(火字旁)。" },
+
+        // 2. 部首逻辑破案 (隐藏字形，考查偏旁)
+       { t:"结构分析", inst:"‘镶嵌’常把金银填入凹槽，所以‘镶’是？", phrase:"__ 嵌", opts:["钅(金字旁)", "木(木字旁)"], ans:"钅(金字旁)", why:"镶嵌工艺最早是在金属上刻槽填金银。" },
+        { t:"结构分析", inst:"‘榨菜’古代用木头机器压榨，所以‘榨’是？", phrase:"__ 菜", opts:["木(木字旁)", "氵(三点水)"], ans:"木(木字旁)", why:"榨油、榨菜的工具最早都是木头做的。" },
+        { t:"结构分析", inst:"‘箩筐’通常是用竹子编的，所以‘筐’是？", phrase:"箩 __", opts:["⺮(竹字头)", "艹(草字头)"], ans:"⺮(竹字头)", why:"箩筐都是竹制品，所以全是竹字头！" },
+        { t:"结构分析", inst:"‘嘱咐’是用嘴巴不停地说，所以是？", phrase:"嘱 __", opts:["口(口字旁)", "讠(言字旁)"], ans:"口(口字旁)", why:"叮嘱、嘱咐，都是动嘴巴(口)。" },
+        { t:"结构分析", inst:"‘汛期’指江河水位上涨，所以‘汛’是？", phrase:"__ 期", opts:["氵(三点水)", "土(土字旁)"], ans:"氵(三点水)", why:"汛期是大水来了，当然是三点水。" },
+        { t:"结构分析", inst:"‘热泪盈眶’的‘眶’指眼框，所以是？", phrase:"盈 __", opts:["目(目字旁)", "木(木字旁)"], ans:"目(目字旁)", why:"眼眶是眼睛(目)的边框，不是木头框。" },
+        { t:"结构分析", inst:"‘邮筒’古代多用竹筒做，所以‘筒’是？", phrase:"邮 __", opts:["⺮(竹字头)", "木(木字旁)"], ans:"⺮(竹字头)", why:"筒子、笔筒，多用竹子做。" },
+        { t:"结构分析", inst:"‘煤炭’是在山里烧出来的火，所以‘炭’有？", phrase:"煤 __", opts:["山字头", "土字头"], ans:"山字头", why:"炭 = 山 + 灰 (山里的灰烬)。" },
+        { t:"结构分析", inst:"‘猎豹’是无尾猛兽，所以部首是？", phrase:"猎 __", opts:["豸(zhì)", "犭(反犬旁)"], ans:"豸(zhì)", why:"注意！豹、猪、猫的部首叫‘豸’，虽然长得像反犬旁。" },
+        { t:"结构分析", inst:"‘机械’古代多是木制器械，所以是？", phrase:"机 __", opts:["木(木字旁)", "钅(金字旁)"], ans:"木(木字旁)", why:"古代兵械多是木头做的。" },
+        { t:"结构分析", inst:"‘稀罕’指少见，头上缺点东西，所以是？", phrase:"稀 __", opts:["冖(秃宝盖)", "宀(宝盖头)"], ans:"冖(秃宝盖)", why:"稀罕很少见，头上没一点（秃宝盖）。" },
+        { t:"结构分析", inst:"‘安逸’指像兔子一样跑了(隐逸)，所以是？", phrase:"安 __", opts:["兔", "免"], ans:"兔", why:"逸 = 兔 + 走之。像兔子一样溜了，图个安闲。" },
+        { t:"结构分析", inst:"‘赔偿’肯定要用到钱，所以‘赔’是？", phrase:"__ 偿", opts:["贝(贝字旁)", "人(单人旁)"], ans:"贝(贝字旁)", why:"赔钱、赔礼，都和价值(贝)有关。" },
+        { t:"结构分析", inst:"‘蚕丝’是天上的虫吐的，所以‘蚕’是？", phrase:"__ 丝", opts:["天+虫", "夭+虫"], ans:"天+虫", why:"蚕宝宝是天虫。" },
+        { t:"结构分析", inst:"‘发愁’是秋天的心情，所以‘愁’是？", phrase:"发 __", opts:["秋+心", "禾+心"], ans:"秋+心", why:"心在秋天容易悲伤(愁)。" },
+        { t:"结构分析", inst:"‘忠臣’的‘臣’中间也是闭合的，不像？", phrase:"忠 __", opts:["巨(巨大)", "区(区别)"], ans:"巨(巨大)", why:"臣字中间是口，不要写成巨。" },
+        { t:"结构分析", inst:"‘平衡’的‘衡’中间有条什么？", phrase:"平 __", opts:["鱼(大鱼)", "田(田地)"], ans:"鱼(大鱼)", why:"平衡中间是一条鱼（鱼+大）。" },
+        { t:"结构分析", inst:"‘协调’指同心协力去办事，左边是？", phrase:"__ 调", opts:["十(十字旁)", "忄(竖心旁)"], ans:"十(十字旁)", why:"协 = 十 + 3个力 (很多力量加在一起)。" },
+        { t:"结构分析", inst:"‘恐惧’是心里的感觉，所以部首是？", phrase:"恐 __", opts:["忄(竖心旁)", "扌(提手旁)"], ans:"忄(竖心旁)", why:"惧怕是心理活动。" },
+        { t:"结构分析", inst:"‘诱发’要用言语去诱惑，所以部首是？", phrase:"__ 发", opts:["讠(言字旁)", "亻(单人旁)"], ans:"讠(言字旁)", why:"诱惑要用好听的话(言)去骗优秀的(秀)人。" },
+        { t:"结构分析", inst:"‘镜匣’指装东西的盒子，里面是？", phrase:"镜 __", opts:["甲(盔甲)", "由(理由)"], ans:"甲(盔甲)", why:"匣子里面装着盔甲(甲)。" },
+        { t:"结构分析", inst:"‘仰慕’是心里的敬仰，所以‘慕’下面是？", phrase:"仰 __", opts:["⺗(心字底)", "扌(手字底)"], ans:"⺗(心字底)", why:"羡慕、仰慕，都是心里的感觉。" },
+        { t:"结构分析", inst:"‘矮’字用矢(箭)做部首，因为？", phrase:"__ 小", opts:["古代箭很短", "委屈变短"], ans:"古代箭很短", why:"矢代表箭，古代箭长只有一尺多，算矮。" },
+        { t:"结构分析", inst:"‘播种’要用手撒种子，所以是？", phrase:"__ 种", opts:["扌(提手旁)", "禾(禾木旁)"], ans:"扌(提手旁)", why:"播是动作，要用手。" },
+        { t:"结构分析", inst:"‘吩咐’是嘴巴说的话，所以是？", phrase:"__ 咐", opts:["口(口字旁)", "人(单人旁)"], ans:"口(口字旁)", why:"吩咐、嘱咐，全是口字旁。" },
+        { t:"结构分析", inst:"‘纠缠’像丝线一样乱，所以是？", phrase:"__ 缠", opts:["纟(绞丝旁)", "扌(提手旁)"], ans:"纟(绞丝旁)", why:"纠缠不清，像乱线团。" },
+        { t:"结构分析", inst:"‘懒惰’是心理状态，所以是？", phrase:"懒 __", opts:["忄(竖心旁)", "月(肉月旁)"], ans:"忄(竖心旁)", why:"懒惰是因为心里不想动。" },
+        { t:"结构分析", inst:"‘承诺’是说出来的话，所以是？", phrase:"承 __", opts:["讠(言字旁)", "口(口字旁)"], ans:"讠(言字旁)", why:"诺言、承诺，重在言语。" },
+        { t:"结构分析", inst:"‘得罪’指触犯法网，所以‘罪’上面是？", phrase:"得 __", opts:["罒(网字头)", "四(数字四)"], ans:"罒(网字头)", why:"罪上面是网（罒），法网恢恢。" },
+        { t:"结构分析", inst:"‘胆怯’是心里害怕，所以是？", phrase:"胆 __", opts:["忄(竖心旁)", "去(去字旁)"], ans:"忄(竖心旁)", why:"怯懦、胆怯，都是心情。" },
+        { t:"结构分析", inst:"‘拒绝’是用手推开，所以是？", phrase:"拒 __", opts:["扌(提手旁)", "足(足字旁)"], ans:"扌(提手旁)", why:"拒绝是手部动作。" },
+        { t:"结构分析", inst:"‘赤道’的‘赤’代表什么颜色？", phrase:"__ 道", opts:["红(土字底)", "亦(无部首)"], ans:"红(土字底)", why:"赤字下面是土(小土)，代表火红色。" },
+        { t:"结构分析", inst:"‘侵略’是人的行动，所以‘侵’是？", phrase:"__ 略", opts:["亻(单人旁)", "彳(双人旁)"], ans:"亻(单人旁)", why:"侵略是人（亻）拿着扫帚(帚)去抢。" },
+        { t:"结构分析", inst:"‘妨碍’是指女方有阻碍？", phrase:"__ 碍", opts:["女(女字旁)", "亻(单人旁)"], ans:"女(女字旁)", why:"妨碍是女字旁，古义多与女性有关，现借用。" },
+        { t:"结构分析", inst:"‘隐蔽’在草丛里，所以‘蔽’是？", phrase:"隐 __", opts:["艹(草字头)", "敝(破旧)"], ans:"艹(草字头)", why:"遮蔽、隐蔽，最早指用草遮盖。" },
+        { t:"结构分析", inst:"‘陷阱’挖在土里，所以‘阱’是？", phrase:"陷 __", opts:["阝(双耳/土山)", "井(水井)"], ans:"阝(双耳/土山)", why:"阱指土坑，所以是左耳旁(阜=土山)。" },
+        { t:"结构分析", inst:"‘拐弯’要用手打方向，所以是？", phrase:"__ 弯", opts:["扌(提手旁)", "口(口字旁)"], ans:"扌(提手旁)", why:"拐弯、拐杖，都离不开手。" },
+        { t:"结构分析", inst:"‘酬谢’要敬酒，所以部首是？", phrase:"__ 谢", opts:["酉(酒坛)", "州(州县)"], ans:"酉(酒坛)", why:"酬谢本意是敬酒报答，所以是酉字旁。" },
+        { t:"结构分析", inst:"‘崩塌’是土塌下来了，所以是？", phrase:"崩 __", opts:["土(土字旁)", "石(石字旁)"], ans:"土(土字旁)", why:"塌方、塌陷，都是土出了问题。" },
+        { t:"结构分析", inst:"‘焦虑’是心急如焚，所以‘虑’下面是？", phrase:"焦 __", opts:["心(心字底)", "思(思字底)"], ans:"心(心字底)", why:"焦虑是心（心字底）里着急，上面是虎头。" },
+        { t:"结构分析", inst:"‘宣誓’是发誓说话，所以‘誓’下面是？", phrase:"宣 __", opts:["言(言字底)", "心(心字底)"], ans:"言(言字底)", why:"誓言、发誓，都是语言。" },
+        { t:"结构分析", inst:"‘谎话’是指说谎，所以‘谎’是？", phrase:"__ 话", opts:["讠(言字旁)", "荒(荒草)"], ans:"讠(言字旁)", why:"谎话是虚假的言语。" },
+        { t:"结构分析", inst:"‘延期’指走得慢(建设)，所以部首是？", phrase:"__ 期", opts:["廴(建字底)", "辶(走之底)"], ans:"廴(建字底)", why:"延期是建字底（廴），不要多写一点！" },
+        { t:"结构分析", inst:"‘一辆’车，所以‘辆’的部首是？", phrase:"一 __", opts:["车(车字旁)", "两(两人)"], ans:"车(车字旁)", why:"车辆当然要有车。" },
+        { t:"结构分析", inst:"‘十趟’指走十次，所以‘趟’的部首是？", phrase:"十 __", opts:["走(走字底)", "尚(高尚)"], ans:"走(走字底)", why:"赶趟、走一趟，都要走。" },
+        { t:"结构分析", inst:"‘托举’要用手托，所以是？", phrase:"__ 举", opts:["扌(提手旁)", "乇(依托)"], ans:"扌(提手旁)", why:"托举是手部动作。" },
+        { t:"结构分析", inst:"‘长辈’指兵车战阵，所以‘辈’下面是？", phrase:"长 __", opts:["车(车字底)", "非(是非)"], ans:"车(车字底)", why:"辈分下面是车，不要写错。" },
+        { t:"结构分析", inst:"‘乃翁’指老头鸟？‘翁’下面是？", phrase:"乃 __", opts:["羽(羽毛)", "公(公公)"], ans:"羽(羽毛)", why:"老翁上面是公，下面是羽（脖颈毛）。" },
+        // 3. 形近字与笔画找茬
+        { t:"细节搜证", inst:"选出正确的字 (杂乱)", phrase:"狼 __", opts:["藉(草头)", "籍(竹头)"], ans:"藉(草头)", why:"狼藉指像草(艹)一样乱；书‘籍’用竹简(⺮)。" },
+        { t:"细节搜证", inst:"选出正确的字 (书本)", phrase:"书 __", opts:["籍(竹头)", "藉(草头)"], ans:"籍(竹头)", why:"书籍古代是竹子做的，选竹字头。" },
+        { t:"细节搜证", inst:"选出正确的字", phrase:"陪 __", opts:["伴(单人旁)", "半(一半)"], ans:"伴(单人旁)", why:"陪伴需要人(亻)，只有一半不行。" },
+        { t:"细节搜证", inst:"选出正确的字 (坐具)", phrase:"凉 __", opts:["席(巾字底)", "度(又字底)"], ans:"席(巾字底)", why:"席子下面是‘巾’，表示布帛。" },
+        { t:"细节搜证", inst:"选出正确的字", phrase:"__ 祀", opts:["祭(示字底)", "蔡(草字头)"], ans:"祭(示字底)", why:"祭：左上是肉(月)，右上是手(又)，下面是示(神)。" },
+        { t:"细节搜证", inst:"选出正确的字 (破坏)", phrase:"__ 灭", opts:["毁(工+殳)", "没(三点水)"], ans:"毁(工+殳)", why:"毁灭左上是‘臼’，下面是‘工’，右边是‘殳’。" },
+        { t:"细节搜证", inst:"选出正确的字", phrase:"金碧辉 __", opts:["煌(火字旁)", "皇(皇帝)"], ans:"煌(火字旁)", why:"辉煌要有光(火字旁)。" },
+        { t:"细节搜证", inst:"选出正确的字 (向下看)", phrase:"__ 视", opts:["俯(单人旁)", "府(政府)"], ans:"俯(单人旁)", why:"俯视要是人(亻)在府上看。" },
+        { t:"细节搜证", inst:"选出正确的字", phrase:"__ 强凌弱", opts:["恃(竖心旁)", "持(提手旁)"], ans:"恃(竖心旁)", why:"恃(shì)强是依仗，心里(忄)依赖；支持用手(扌)。" },
+        { t:"细节搜证", inst:"选出正确的字 (抓人)", phrase:"__ 留", opts:["拘(提手旁)", "溜(三点水)"], ans:"拘(提手旁)", why:"拘留是把人扣留(留)，不是溜走。" },
+        { t:"细节搜证", inst:"选出正确的字 (伤心)", phrase:"悲 __", opts:["哀(中间口)", "衰(中间一)"], ans:"哀(中间口)", why:"悲哀有口(口)哭诉，衰老中间是一横。" },
+        { t:"细节搜证", inst:"选出正确的字", phrase:"上吐下 __", opts:["泻(三点水)", "写(写字)"], ans:"泻(三点水)", why:"泻肚是拉水(氵)，不是写字。" },
+        { t:"细节搜证", inst:"选出正确的字 (隐藏)", phrase:"__ 伏", opts:["潜(替+水)", "替(代替)"], ans:"潜(替+水)", why:"潜水要在水(氵)里替人换气。" },
+        { t:"细节搜证", inst:"选出正确的字 (房子)", phrase:"宫 __", opts:["殿(殳字旁)", "臀(肉月旁)"], ans:"殿(殳字旁)", why:"宫殿没有肉(月)，臀部有肉。" },
+        { t:"细节搜证", inst:"选出正确的字 (小山)", phrase:"丘 __", opts:["陵(双耳旁)", "棱(木字旁)"], ans:"陵(双耳旁)", why:"丘陵是大土山(阝)，棱角是木头。" },
+        { t:"细节搜证", inst:"选出正确的字 (看)", phrase:"饱 __", opts:["览(见字底)", "抱(提手旁)"], ans:"览(见字底)", why:"饱览是看个饱(饣+见)。" },
+        { t:"细节搜证", inst:"选出正确的字 (花钱)", phrase:"开 __", opts:["销(金字旁)", "消(三点水)"], ans:"销(金字旁)", why:"开销指花销金钱(钅)；消息用水(氵)。" },
+        { t:"细节搜证", inst:"选出正确的字 (照相)", phrase:"拍 __", opts:["摄(提手旁)", "捏(提手旁)"], ans:"摄(提手旁)", why:"拍摄要用手(扌)拿着耳朵(耳)去听去取。" },
+        { t:"细节搜证", inst:"选出正确的字 (休息)", phrase:"安 __", opts:["歇(欠字旁)", "喝(口字旁)"], ans:"歇(欠字旁)", why:"歇着是因为欠(欠)缺力气，要休息。" },
+        { t:"细节搜证", inst:"选出正确的字 (努力)", phrase:"__ 强", opts:["勉(力字旁)", "详(言字旁)"], ans:"勉(力字旁)", why:"勉强是强(qiǎng)迫，读三声，用力(力)去做。" },
+
+        // 4. 的地得 & 语境搭配
+        { t:"语法特警", inst:"填入正确的de", phrase:"飞快__跑", opts:["地(土也)", "的(白勺)"], ans:"地(土也)", why:"动词(跑)前面用‘土也地’。" },
+        { t:"语法特警", inst:"填入正确的de", phrase:"美丽__花", opts:["的(白勺)", "地(土也)"], ans:"的(白勺)", why:"名词(花)前面用‘白勺的’。" },
+        { t:"语法特警", inst:"填入正确的de", phrase:"跑__快", opts:["得(双人)", "地(土也)"], ans:"得(双人)", why:"动词(跑)后面，补充说明(快)，用‘双人得’。" },
+        { t:"语法特警", inst:"填入正确的de", phrase:"玩__开心", opts:["得(双人)", "的(白勺)"], ans:"得(双人)", why:"玩(动词)得怎么样？很开心，用‘得’。" },
+        { t:"语法特警", inst:"填入正确的de", phrase:"感动__流泪", opts:["地", "得"], ans:"得", why:"感动得怎么样？流泪了，用‘得’。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 且", opts:["况(两点水)", "矿(石字旁)"], ans:"况(两点水)", why:"况且是连词，两点水。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 至", opts:["甚(甘字底)", "其(其它)"], ans:"甚(甘字底)", why:"甚至(shèn)，甘字底。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 头丧气", opts:["垂(垂柳)", "吹(吹气)"], ans:"垂(垂柳)", why:"垂头是头低下来(垂柳)，不是吹气。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"严 __", opts:["谨(言字旁)", "紧(紧张)"], ans:"谨(言字旁)", why:"严谨指言语(讠)行动小心谨慎。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 大", opts:["宽(宝盖头)", "况(两点水)"], ans:"宽(宝盖头)", why:"宽大指宽阔(宝盖头+草+见)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 报", opts:["回(回来)", "会(开会)"], ans:"回(回来)", why:"回报、回答，用‘回’。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 想", opts:["妄(妄语)", "忘(忘记)"], ans:"妄(妄语)", why:"妄想指胡乱想(狂妄)，忘是忘记。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 围", opts:["周(四周)", "州(神州)"], ans:"周(四周)", why:"周围是一周，圆圈。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 绕", opts:["围(包围)", "伟(伟大)"], ans:"围(包围)", why:"围绕是包围，口字框。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"浮 __", opts:["现(出现)", "线(线条)"], ans:"现(出现)", why:"浮现是显现出来(见)，不是线。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"__ 送", opts:["派(三点水)", "旅(旅游)"], ans:"派(三点水)", why:"派送是派遣(三点水)；旅游是方字旁。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"清 __", opts:["晰(日字旁)", "析(木字旁)"], ans:"晰(日字旁)", why:"清晰和光线(日)有关，分析用木头。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"训 __", opts:["斥(一点)", "拆(提手旁)"], ans:"斥(一点)", why:"训斥是斥责(一点)，拆开是有手(扌)。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"健 __", opts:["康(广+隶)", "慷(竖心旁)"], ans:"康(广+隶)", why:"健康是广字头+隶。" },
+        { t:"语境侦查", inst:"填入正确的字", phrase:"秉 __ 执法", opts:["公(公正)", "工(工作)"], ans:"公(公正)", why:"秉公是公正(公)的意思。" },
+
+        // 5.【难字拆解特训】 ---
+        { t:"难字拆解", inst:"‘荆棘’的‘棘’怎么写？", phrase:"荆 __", opts:["两个刺", "两个束"], ans:"两个刺", why:"荆棘都有刺，所以是两个‘刺’并排。" },
+        { t:"难字拆解", inst:"‘瞬间’指一眨眼，所以‘瞬’是？", phrase:"__ 间", opts:["目字旁", "日字旁"], ans:"目字旁", why:"瞬间是一眨眼的时间，和眼睛(目)有关。" },
+        { t:"难字拆解", inst:"‘礼毕’指完毕，‘毕’下面是？", phrase:"礼 __", opts:["比+十", "比+巾"], ans:"比+十", why:"完毕的毕，下面是个‘十’。" },
+        { t:"难字拆解", inst:"‘利益’指水漫出来了，‘益’下面是？", phrase:"利 __", opts:["皿(器皿)", "且(而且)"], ans:"皿(器皿)", why:"益是水漫出来了(上面倒八)，下面是器皿(皿)。" },
+        { t:"难字拆解", inst:"‘寺庙’里供奉理由，所以‘庙’里面是？", phrase:"寺 __", opts:["由(理由)", "田(田地)"], ans:"由(理由)", why:"庙里供奉理由(由)，不是种田。" },
+        { t:"难字拆解", inst:"‘愈合’指身心痊愈，‘愈’下面是？", phrase:"__ 合", opts:["心(心字底)", "月(肉月旁)"], ans:"心(心字底)", why:"痊愈不仅身好，心也要好(心字底)。" },
+        { t:"难字拆解", inst:"‘寂静’指家里只有叔叔，所以‘寂’是？", phrase:"__ 静", opts:["宀+叔", "宀+椒"], ans:"宀+叔", why:"寂静是家里(宀)只有叔叔(叔)一个人。" },
+        { t:"难字拆解", inst:"‘损失’指人员手里的钱少了，所以‘损’是？", phrase:"__ 失", opts:["扌+员", "扌+圆"], ans:"扌+员", why:"损失是人员(员)手(扌)里的东西少了。" },
+        { t:"难字拆解", inst:"‘牺牲’古代用牛祭祀，所以都是？", phrase:"__ 牲", opts:["牛字旁", "马字旁"], ans:"牛字旁", why:"古代祭祀用牛，所以牺牲都是牛字旁。" },
+        { t:"难字拆解", inst:"‘提醒’指酒醒了，所以‘醒’左边是？", phrase:"提 __", opts:["酉(酒坛)", "西(西方)"], ans:"酉(酒坛)", why:"醒酒要用酉(酒坛子)，旁边是星星。" },
+        { t:"难字拆解", inst:"‘运转’要有车轮，所以‘转’是？", phrase:"运 __", opts:["车字旁", "专字旁"], ans:"车字旁", why:"运转要有车轮(车)才能转。" },
+        { t:"难字拆解", inst:"‘鼻’子下面那个字念bì，它是？", phrase:"鼻", opts:["畀", "田"], ans:"畀", why:"鼻子下面是‘畀’(bì)，不是单纯的田。" },
+        { t:"难字拆解", inst:"‘钦佩’指心里像金子一样缺不了，部首是？", phrase:"__ 佩", opts:["金字旁", "欠字旁"], ans:"金字旁", why:"钦佩金字旁，右边是欠。" },
+        { t:"难字拆解", inst:"‘铺垫’指用手拿土垫，所以‘垫’是？", phrase:"铺 __", opts:["执+土", "热+土"], ans:"执+土", why:"垫东西用手拿土(执+土)。" },
+        { t:"难字拆解", inst:"‘愤怒’指心里喷发，‘愤’的右边是？", phrase:"__ 怒", opts:["贲(bēn)", "奔(bēn)"], ans:"贲(bēn)", why:"气愤心里(忄)像花卉(贲)一样喷发。" },
+        { t:"难字拆解", inst:"‘贡献’给南方的狗，所以‘献’是？", phrase:"贡 __", opts:["南+犬", "西+犬"], ans:"南+犬", why:"贡献给南方(南)的狗(犬)。" },
+        { t:"难字拆解", inst:"‘核潜艇’是小舟，所以‘艇’是？", phrase:"潜 __", opts:["舟字旁", "虫字旁"], ans:"舟字旁", why:"潜艇是船(舟)，朝廷的廷。" },
+        { t:"难字拆解", inst:"‘钙片’能给乞丐补钙，所以‘钙’是？", phrase:"__ 片", opts:["钅+丐", "钅+亏"], ans:"钅+丐", why:"钙片给乞丐(丐)吃也能补钙。" },
+        { t:"难字拆解", inst:"‘奖励’给将军发大奖，所以‘奖’是？", phrase:"__ 励", opts:["将+大", "将+犬"], ans:"将+大", why:"奖励给将军(将)发个大(大)红包。" },
+        { t:"难字拆解", inst:"‘蕴含’在草丛里，所以‘蕴’是？", phrase:"__ 含", opts:["艹+缊", "艹+温"], ans:"艹+缊", why:"蕴藏在草丛(艹)里，绞丝旁(缊)。" }
+    ];
+
+    let currentPool = []; let idx = 0; let score = 0; let wrongRecords = [];
+    let userName = "神秘警官";
+
+    // --- 3. 核心逻辑 ---
+    window.onload = function() {
+        initLevelSelect();
+    }
+
+    function initLevelSelect() {
+        const select = document.getElementById('level-select');
+        select.innerHTML = ""; 
+
+        const PAGE_SIZE = 20;
+        const totalDays = Math.ceil(DB.length / PAGE_SIZE);
+
+        for(let i=1; i<=totalDays; i++) {
+            let start = (i-1)*PAGE_SIZE + 1;
+            let end = Math.min(i*PAGE_SIZE, DB.length);
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = `第 ${i} 天巡逻 (${start}-${end}题)`;
+            select.appendChild(opt);
+        }
+
+        let randomOpt = document.createElement('option');
+        randomOpt.value = "random";
+        randomOpt.innerText = "👮 随机突击检查 (无限模式)";
+        select.appendChild(randomOpt);
+    }
+
+    function startGame() {
+        // 尝试恢复音效上下文
+        if (AudioCtx && AudioCtx.state === 'suspended') {
+            try{ AudioCtx.resume(); } catch(e){} 
+        }
+        
+        const nameInput = document.getElementById('username').value.trim();
+        if(nameInput) userName = nameInput;
+
+        const level = document.getElementById('level-select').value;
+        const PAGE_SIZE = 20;
+
+        if (level === "random") {
+            currentPool = [...DB].sort(() => Math.random() - 0.5).slice(0, 20);
+        } else {
+            const day = parseInt(level);
+            const start = (day - 1) * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            let slice = DB.slice(start, end);
+            currentPool = slice.sort(() => Math.random() - 0.5);
+            
+            if (currentPool.length === 0) {
+                alert("本区域没有案件！");
+                return;
+            }
+        }
+
+        idx = 0; score = 0; wrongRecords = [];
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = currentPool[idx];
+        document.getElementById('count-display').innerText = `巡逻进度: ${idx + 1}/${currentPool.length}`;
+        document.getElementById('progress-bar').style.width = `${((idx+1) / currentPool.length) * 100}%`;
+        document.getElementById('score-display').innerText = `警徽: ${score}`;
+        document.getElementById('q-type').innerText = q.t;
+        
+        document.getElementById('q-main-display').innerHTML = `
+            <div class="q-instruction">${q.inst}：</div>
+            <div class="q-phrase">${q.phrase}</div>
+        `;
+        
+        const grid = document.getElementById('options-grid'); grid.innerHTML = '';
+        let opts = [...q.opts].sort(() => Math.random() - 0.5);
+        opts.forEach(opt => {
+            const btn = document.createElement('button'); btn.className = 'option-btn';
+            btn.innerText = opt; 
+            btn.onclick = () => { 
+                playSound(600, 'sine', 0.1); 
+                check(btn, opt, q); 
+            };
+            grid.appendChild(btn);
+        });
+        document.getElementById('feedback-box').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+    }
+
+    function check(btn, val, q) {
+        document.querySelectorAll('.option-btn').forEach(b => b.onclick = null);
+        const isCorrect = val === q.ans;
+        if (isCorrect) {
+            playSound(880, 'triangle', 0.3);
+            btn.classList.add('correct'); score += 5;
+            document.getElementById('fb-title').innerText = "✅ 抓捕成功！";
+            document.getElementById('fb-title').style.color = "var(--correct)";
+        } else {
+            playSound(150, 'sawtooth', 0.4);
+            btn.classList.add('wrong');
+            const pureText = q.phrase.replace(/<[^>]+>/g, '');
+            wrongRecords.push({ phrase: pureText, ans: q.ans });
+            document.getElementById('fb-title').innerText = "❌ 嫌犯逃脱！";
+            document.getElementById('fb-title').style.color = "var(--wrong)";
+            document.querySelectorAll('.option-btn').forEach(b => { if(b.innerText === q.ans) b.classList.add('correct'); });
+        }
+        document.getElementById('fb-text').innerText = q.why;
+        document.getElementById('feedback-box').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+        idx++;
+        if (idx < currentPool.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('result-name').innerText = userName;
+        
+        const list = document.getElementById('wrong-list');
+        if (wrongRecords.length === 0) {
+            list.innerHTML = "<p style='color:var(--correct)'>太棒了！辖区内治安完美，没有漏网之鱼！</p>";
+        } else {
+            list.innerHTML = wrongRecords.map(r => `<div class="wrong-item">${r.phrase} 👉 正确：${r.ans}</div>`).join('');
+        }
+    }
+</script>
+</body>
+</html>
